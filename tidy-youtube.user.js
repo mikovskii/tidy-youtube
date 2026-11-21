@@ -2,7 +2,7 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.2.1
+// @version      1.3.0
 // @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 21 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
@@ -178,33 +178,88 @@
 
   // ---------------------------------------------------------------------------
   // Settings panel: built on open, fully removed on close.
-  // Shadow DOM + createElement/textContent (Trusted Types).
+  // Shadow DOM + createElement/textContent only (YouTube enforces Trusted Types).
   // ---------------------------------------------------------------------------
   const PANEL_CSS = `
     :host{all:initial}
+    [hidden]{display:none!important}
+    *{box-sizing:border-box}
     .bd{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;font:14px/1.4 Roboto,-apple-system,"Segoe UI",sans-serif;color:#e8eaed}
-    .pn{width:min(440px,100%);max-height:88vh;display:flex;flex-direction:column;background:#1b1f25;border:1px solid #2a2f37;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden}
-    .hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2a2f37}
-    .hd h1{font-size:16px;margin:0;font-weight:600}
-    .x{background:none;border:0;color:#9aa0a6;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px}
-    .x:hover{background:#2a2f37;color:#fff}
-    .tb{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid #2a2f37}
-    .tb button{background:#2a2f37;color:#e8eaed;border:0;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
-    .tb button:hover{background:#353b45}
-    .bdy{overflow-y:auto;padding:6px 0 10px}
-    .sh{display:flex;width:100%;align-items:center;gap:8px;background:none;border:0;color:inherit;font:inherit;font-weight:600;padding:10px 16px;cursor:pointer;text-align:left}
-    .sh:hover{background:#21262d}
-    .sh .n{margin-left:auto;font-weight:400;font-size:12px;color:#9aa0a6}
-    .sh .c{color:#9aa0a6;font-size:11px;width:10px}
-    .grp{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#9aa0a6;padding:8px 16px 2px 34px}
-    label{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 16px 7px 34px;cursor:pointer}
-    label:hover{background:#21262d}
-    input{appearance:none;-webkit-appearance:none;flex:none;width:34px;height:20px;border-radius:10px;background:#3a404a;position:relative;cursor:pointer;margin:0}
-    input::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#cfd3d8}
-    input:checked{background:#5b6ee1}
-    input:checked::after{left:17px;background:#fff}
-    input:focus-visible{outline:2px solid #8fa0ff;outline-offset:2px}
+    .pn{position:relative;width:min(440px,100%);height:min(720px,88vh);display:flex;flex-direction:column;background:#14171c;border:1px solid #2a2f37;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden}
+    .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 0 18px}
+    .hd h1{margin:0;font-size:14px;font-weight:600;color:#9aa0a6}
+    button{font:inherit;color:inherit}
+    .ib{display:grid;place-items:center;width:34px;height:34px;background:none;border:0;border-radius:10px;color:#9aa0a6;cursor:pointer}
+    .ib:hover{background:#252a32;color:#fff}
+    .bar{position:relative;display:flex;gap:10px;padding:10px 16px 6px}
+    .sq,.dd{height:54px;background:#1d2128;border:1px solid #2a2f37;border-radius:14px;cursor:pointer}
+    .sq{display:grid;place-items:center;width:54px;flex:none;color:#e8eaed}
+    .dd{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;text-align:left}
+    .sq:hover,.dd:hover{background:#232830}
+    .dd-t{display:flex;flex-direction:column;line-height:1.25}
+    .dd-l{font-size:12px;color:#9aa0a6}
+    .dd-v{font-size:16px;font-weight:700}
+    .dd svg{color:#9aa0a6}
+    .menu{position:absolute;top:68px;left:16px;z-index:3;min-width:240px;padding:8px;background:#1d2128;border:1px solid #333944;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+    .cap{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#80868e;padding:16px 4px 8px}
+    .menu .cap{padding:8px 10px 6px}
+    .mi{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:11px 10px;border-radius:10px;text-align:left;cursor:pointer}
+    .mi:hover{background:#262b33}
+    .mi svg{color:#80868e}
+    .sep{height:1px;background:#2a2f37;margin:6px 4px}
+    .scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 16px}
+    .sh{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;padding:20px 2px 6px;text-align:left;cursor:pointer}
+    .sh h2{flex:1;margin:0;font-size:20px;font-weight:700}
+    .cnt{font-size:13px;color:#9aa0a6}
+    .chev{color:#9aa0a6}
+    .sh[aria-expanded="false"] .chev{transform:rotate(-90deg)}
+    .grp{font-size:13px;color:#9aa0a6;padding:12px 2px 6px}
+    .card{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px;padding:14px 16px;background:#1d2128;border:1px solid #2a2f37;border-radius:14px;font-size:14px;font-weight:500;cursor:pointer}
+    .card:hover{background:#21262e}
+    .tg{appearance:none;-webkit-appearance:none;flex:none;position:relative;width:46px;height:28px;margin:0;border-radius:14px;background:#3a404a;cursor:pointer}
+    .tg::after{content:"";position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#cfd3d8}
+    .tg:checked{background:#5b6ee1}
+    .tg:checked::after{left:22px;background:#fff}
+    .empty{padding:48px 0;text-align:center;color:#9aa0a6}
+    .sheet{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;background:#1b1f25}
+    .sheet-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 12px 12px 18px}
+    .sheet-hd h2{margin:0;font-size:21px;font-weight:700}
+    .sw{position:relative;margin:0 16px 14px}
+    .sw svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#80868e;pointer-events:none}
+    .search{width:100%;height:48px;padding:0 14px 0 44px;background:#14171c;border:1px solid #2a2f37;border-radius:12px;color:#e8eaed;font:inherit;font-size:15px;outline:none}
+    .search:focus{border-color:#5b6ee1}
+    .sheet-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 16px;border-top:1px solid #2a2f37}
+    .nav{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;border-bottom:1px solid #262b33;padding:14px 8px;font-size:15px;font-weight:600;text-align:left;cursor:pointer}
+    .nav.qa{border-bottom:0;border-radius:10px}
+    .nav:hover,.nav.on{background:#252a32;border-radius:10px}
+    .nav svg{color:#9aa0a6}
+    .nav-l{flex:1}
+    .nav-c{font-size:13px;font-weight:500;color:#9aa0a6}
+    button:focus-visible,.tg:focus-visible{outline:2px solid #8fa0ff;outline-offset:2px}
   `;
+
+  // Stroke icons (24x24), built with createElementNS.
+  const ICONS = {
+    menu: 'M4 7h16M4 12h16M4 17h16',
+    close: 'M6 6l12 12M18 6L6 18',
+    chev: 'M6 9l6 6 6-6',
+    search: 'M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13zM20 20l-4.8-4.8',
+    grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+    sliders: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
+    check: 'M5 12.5l4.5 4.5L19 7.5',
+    reset: 'M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5',
+  };
+  const icon = (name, size = 20) => {
+    const NS = 'http://www.w3.org/2000/svg';
+    const s = document.createElementNS(NS, 'svg');
+    for (const [k, v] of [['viewBox', '0 0 24 24'], ['width', size], ['height', size], ['fill', 'none'],
+      ['stroke', 'currentColor'], ['stroke-width', '2'], ['stroke-linecap', 'round'], ['stroke-linejoin', 'round'],
+      ['aria-hidden', 'true']]) s.setAttribute(k, v);
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', ICONS[name]);
+    s.appendChild(p);
+    return s;
+  };
 
   let panel = null; // { host, close }
 
@@ -226,58 +281,157 @@
     shadow.appendChild(el('style', { text: PANEL_CSS }));
 
     const sections = [...new Set(OPTIONS.map((o) => o.section))];
-    const inputs = new Map();      // key -> input
-    const counters = new Map();    // section -> span
-    const collapsed = new Set();
+    const inSection = (sec) => OPTIONS.filter((o) => o.section === sec);
+    const countOn = (opts) => opts.filter((o) => settings[o.key]).length;
 
-    const updateCount = (sec) => {
-      const opts = OPTIONS.filter((o) => o.section === sec);
-      counters.get(sec).textContent = `${opts.filter((o) => settings[o.key]).length}/${opts.length} enabled`;
-    };
-    const setAndSync = (key, val) => {
-      setOption(key, val);
-      inputs.get(key).checked = val;
-    };
-    const bulk = (fn) => {
-      for (const o of OPTIONS) setAndSync(o.key, fn(o));
-      save();
-      sections.forEach(updateCount);
+    let view = 'all';                // 'all' | 'enabled' | <section name>
+    const collapsed = new Set();     // collapsed sections
+    const inputs = new Map();        // key -> Set<input> (main list + search results)
+    const counters = new Map();      // section -> "N enabled" span
+
+    const refreshCounts = () => {
+      for (const [sec, span] of counters) span.textContent = `${countOn(inSection(sec))} enabled`;
     };
 
-    const body = el('div', { class: 'bdy' });
-    for (const sec of sections) {
-      const list = el('div');
-      const chev = el('span', { class: 'c', text: '▾' });
-      const cnt = el('span', { class: 'n' });
-      counters.set(sec, cnt);
-      body.appendChild(el('button', {
-        class: 'sh', type: 'button',
-        onclick: () => {
-          const c = !collapsed.has(sec);
-          if (c) collapsed.add(sec); else collapsed.delete(sec);
-          list.hidden = c;
-          chev.textContent = c ? '▸' : '▾';
+    const toggleCard = (o) => {
+      const inp = el('input', {
+        type: 'checkbox', role: 'switch', class: 'tg', 'aria-label': o.label,
+        onchange: (e) => {
+          const v = e.target.checked;
+          setOption(o.key, v);
+          save();
+          for (const i of inputs.get(o.key)) i.checked = v;
+          refreshCounts();
         },
-      }, [chev, el('span', { text: sec }), cnt]));
+      });
+      inp.checked = settings[o.key];
+      if (!inputs.has(o.key)) inputs.set(o.key, new Set());
+      inputs.get(o.key).add(inp);
+      return el('label', { class: 'card' }, [el('span', { text: o.label }), inp]);
+    };
 
-      let lastGroup = null;
-      for (const o of OPTIONS) {
-        if (o.section !== sec) continue;
-        if (o.group !== lastGroup) {
-          list.appendChild(el('div', { class: 'grp', text: o.group }));
-          lastGroup = o.group;
+    // --- Main list -----------------------------------------------------------
+    const browseValue = el('span', { class: 'dd-v' });
+    const list = el('div', { class: 'scroll' });
+
+    const renderList = () => {
+      inputs.clear();
+      counters.clear();
+      list.replaceChildren();
+      const secs = view === 'all' || view === 'enabled' ? sections : [view];
+      for (const sec of secs) {
+        const opts = inSection(sec).filter((o) => view !== 'enabled' || settings[o.key]);
+        if (!opts.length) continue;
+        const body = el('div');
+        const cnt = el('span', { class: 'cnt' });
+        const chev = icon('chev', 18);
+        chev.setAttribute('class', 'chev');
+        counters.set(sec, cnt);
+        const head = el('button', {
+          class: 'sh', type: 'button', 'aria-expanded': String(!collapsed.has(sec)),
+          onclick: () => {
+            const c = !collapsed.has(sec);
+            if (c) collapsed.add(sec); else collapsed.delete(sec);
+            body.hidden = c;
+            head.setAttribute('aria-expanded', String(!c));
+          },
+        }, [el('h2', { text: sec }), cnt, chev]);
+        body.hidden = collapsed.has(sec);
+        let group = null;
+        for (const o of opts) {
+          if (o.group !== group) { body.appendChild(el('div', { class: 'grp', text: o.group })); group = o.group; }
+          body.appendChild(toggleCard(o));
         }
-        const inp = el('input', {
-          type: 'checkbox', role: 'switch',
-          onchange: (e) => { setOption(o.key, e.target.checked); save(); updateCount(sec); },
-        });
-        inp.checked = settings[o.key];
-        inputs.set(o.key, inp);
-        list.appendChild(el('label', null, [el('span', { text: o.label }), inp]));
+        list.append(head, body);
       }
-      body.appendChild(list);
-      updateCount(sec);
-    }
+      if (!list.firstChild) list.appendChild(el('p', { class: 'empty', text: 'No options enabled.' }));
+      browseValue.textContent = view === 'all' ? 'All features' : view === 'enabled' ? 'Enabled' : view;
+      list.scrollTop = 0;
+      refreshCounts();
+    };
+
+    const bulk = (fn) => {
+      for (const o of OPTIONS) setOption(o.key, fn(o));
+      save();
+      renderList();
+    };
+
+    // --- Actions menu (hamburger) --------------------------------------------
+    const menuItem = (text, ico, fn) => el('button', {
+      class: 'mi', type: 'button', role: 'menuitem',
+      onclick: () => { fn(); menu.hidden = true; },
+    }, [el('span', { text }), icon(ico, 18)]);
+    const menu = el('div', { class: 'menu', role: 'menu', hidden: '' }, [
+      el('div', { class: 'cap', text: 'Actions' }),
+      menuItem('Enable all', 'check', () => bulk(() => true)),
+      menuItem('Disable all', 'close', () => bulk(() => false)),
+      el('div', { class: 'sep' }),
+      menuItem('Reset to defaults', 'reset', () => bulk((o) => DEFAULTS[o.key])),
+    ]);
+
+    // --- Browse sheet --------------------------------------------------------
+    const sheetBody = el('div', { class: 'sheet-body' });
+    const search = el('input', {
+      type: 'search', class: 'search', placeholder: 'Search features…', 'aria-label': 'Search features',
+      oninput: () => renderSheet(),
+    });
+    const navItem = (ico, label, count, target, cls) => el('button', {
+      class: `nav${cls ? ' ' + cls : ''}${view === target ? ' on' : ''}`, type: 'button',
+      onclick: () => { view = target; closeSheet(); },
+    }, [ico && icon(ico), el('span', { class: 'nav-l', text: label }), el('span', { class: 'nav-c', text: count })]);
+
+    const renderSheet = () => {
+      sheetBody.replaceChildren();
+      const q = search.value.trim().toLowerCase();
+      if (q) {
+        const hits = OPTIONS.filter((o) => `${o.label} ${o.section} ${o.group}`.toLowerCase().includes(q));
+        sheetBody.appendChild(el('div', { class: 'cap', text: `${hits.length} result${hits.length === 1 ? '' : 's'}` }));
+        for (const o of hits) sheetBody.appendChild(toggleCard(o));
+        return;
+      }
+      const on = countOn(OPTIONS);
+      sheetBody.append(
+        el('div', { class: 'cap', text: 'Quick access' }),
+        navItem('grid', 'All features', `${on} / ${OPTIONS.length}`, 'all', 'qa'),
+        navItem('sliders', 'Enabled', String(on), 'enabled', 'qa'),
+        el('div', { class: 'cap', text: 'Sections' }),
+        ...sections.map((s) => {
+          const opts = inSection(s);
+          return navItem(null, s, `${countOn(opts)} / ${opts.length}`, s);
+        }),
+      );
+    };
+
+    const sheet = el('div', { class: 'sheet', role: 'dialog', 'aria-label': 'Browse features', hidden: '' }, [
+      el('div', { class: 'sheet-hd' }, [
+        el('h2', { text: 'Browse Features' }),
+        el('button', { class: 'ib', type: 'button', 'aria-label': 'Close', onclick: () => closeSheet() }, [icon('close')]),
+      ]),
+      el('div', { class: 'sw' }, [icon('search', 18), search]),
+      sheetBody,
+    ]);
+    const openSheet = () => {
+      menu.hidden = true;
+      search.value = '';
+      renderSheet();
+      sheet.hidden = false;
+      search.focus({ preventScroll: true });
+    };
+    const closeSheet = () => {
+      sheet.hidden = true;
+      sheetBody.replaceChildren();
+      renderList(); // also drops search-result inputs from the map
+      browseBtn.focus({ preventScroll: true });
+    };
+
+    // --- Shell ---------------------------------------------------------------
+    const menuBtn = el('button', {
+      class: 'sq', type: 'button', 'aria-label': 'Actions', 'aria-haspopup': 'menu',
+      onclick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; },
+    }, [icon('menu', 22)]);
+    const browseBtn = el('button', {
+      class: 'dd', type: 'button', 'aria-haspopup': 'dialog', onclick: openSheet,
+    }, [el('span', { class: 'dd-t' }, [el('span', { class: 'dd-l', text: 'Browse' }), browseValue]), icon('chev')]);
 
     const close = () => {
       document.removeEventListener('keydown', onKey, true);
@@ -285,32 +439,39 @@
       panel = null;
     };
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); }
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (!sheet.hidden) closeSheet();
+      else if (!menu.hidden) menu.hidden = true;
+      else close();
     };
 
-    const pn = el('div', { class: 'pn', role: 'dialog', 'aria-label': 'Tidy for YouTube' }, [
+    const pn = el('div', {
+      class: 'pn', role: 'dialog', 'aria-label': 'Tidy for YouTube',
+      onclick: (e) => { if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true; },
+    }, [
       el('div', { class: 'hd' }, [
         el('h1', { text: 'Tidy for YouTube' }),
-        el('button', { class: 'x', type: 'button', 'aria-label': 'Close', text: '✕', onclick: close }),
+        el('button', { class: 'ib', type: 'button', 'aria-label': 'Close', onclick: close }, [icon('close')]),
       ]),
-      el('div', { class: 'tb' }, [
-        el('button', { type: 'button', text: 'Enable all', onclick: () => bulk(() => true) }),
-        el('button', { type: 'button', text: 'Disable all', onclick: () => bulk(() => false) }),
-        el('button', { type: 'button', text: 'Reset to defaults', onclick: () => bulk((o) => DEFAULTS[o.key]) }),
-      ]),
-      body,
+      el('div', { class: 'bar' }, [menuBtn, browseBtn, menu]),
+      list,
+      sheet,
     ]);
     const bd = el('div', { class: 'bd', onclick: (e) => { if (e.target === bd) close(); } }, [pn]);
     shadow.appendChild(bd);
+    renderList();
 
-    // Keep key presses away from YouTube (otherwise Space on a toggle would pause the video).
-    host.addEventListener('keydown', (e) => { if (e.key !== 'Escape') e.stopPropagation(); });
+    // Keep key presses away from YouTube hotkeys (Space would pause, letters would seek, etc.).
+    for (const t of ['keydown', 'keyup', 'keypress']) {
+      host.addEventListener(t, (e) => { if (e.key !== 'Escape') e.stopPropagation(); });
+    }
     document.addEventListener('keydown', onKey, true);
 
     (document.body || root).appendChild(host);
     panel = { host, close };
-    const first = shadow.querySelector('input');
-    if (first) first.focus({ preventScroll: true });
+    browseBtn.focus({ preventScroll: true });
   };
 
   GM_registerMenuCommand('Tidy for YouTube settings', () => (panel ? panel.close() : openPanel()));
