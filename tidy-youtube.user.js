@@ -3,8 +3,8 @@
 // @namespace    tidy-youtube
 // @author       mikovskii
 // @license      MIT
-// @version      1.9.0
-// @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 34 toggles.
+// @version      1.10.0
+// @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 30 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
 // @grant        GM_getValue
@@ -49,20 +49,20 @@
     `ytd-mini-guide-entry-renderer:has(> a${href})`,
   ];
 
-  const SHORTS = {
-    // The Shorts guide entry has no href, so match by title.
-    nav: ['ytd-guide-entry-renderer:has(> a[title="Shorts"])',
-          'ytd-mini-guide-entry-renderer:has(> a[title="Shorts"])',
-          'yt-tab-shape[tab-title="Shorts"]'],
-    feed: ['ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts])',
-           'ytd-browse ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model)'],
-    search: ['ytd-search grid-shelf-view-model:has(ytm-shorts-lockup-view-model)',
-             'ytd-search ytd-reel-shelf-renderer',
-             'ytd-search ytd-video-renderer:has(a#thumbnail[href^="/shorts/"])'],
-    other: ['ytd-browse ytd-reel-shelf-renderer',
-            'ytd-watch-flexy ytd-reel-shelf-renderer',
-            'ytd-watch-next-secondary-results-renderer yt-lockup-view-model:has(a[href^="/shorts/"])'],
-  };
+  // Everywhere Shorts show up. Shorts cards in the Home/Subscriptions feed always sit inside
+  // the Shorts shelf, so the shelf rule covers them without a per-card :has() check.
+  const SHORTS = [
+    'ytd-guide-entry-renderer:has(> a[title="Shorts"])',      // sidebar entry (has no href)
+    'ytd-mini-guide-entry-renderer:has(> a[title="Shorts"])', // collapsed sidebar
+    'yt-tab-shape[tab-title="Shorts"]',                       // channel tab
+    'ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts])', // Home / Subscriptions shelf
+    'ytd-search grid-shelf-view-model:has(ytm-shorts-lockup-view-model)', // search shelves
+    'ytd-search ytd-reel-shelf-renderer',
+    'ytd-search ytd-video-renderer:has(a#thumbnail[href^="/shorts/"])',   // single Short in search results
+    'ytd-browse ytd-reel-shelf-renderer',                     // channel Home shelf
+    'ytd-watch-flexy ytd-reel-shelf-renderer',                // shelf next to a video
+    'ytd-watch-next-secondary-results-renderer yt-lockup-view-model:has(a[href^="/shorts/"])',
+  ];
 
   // Option factory: in(section, group, parent?)(key, label, selectors, extra?)
   const inGroup = (section, group, parent) => (key, label, sel, extra) =>
@@ -80,7 +80,6 @@
   const comment = inGroup('Video Page', 'Comments', 'hideComments');
   const search = inGroup('Search Page', 'Search Results');
   const shorts = inGroup('Shorts', 'Shorts');
-  const short = inGroup('Shorts', 'Shorts', 'hideShorts');
 
   const OPTIONS = [
     // The Shorts shelf (is-shorts) is left to the Shorts options.
@@ -131,12 +130,7 @@
     search('hidePeopleAlsoSearch', "Hide 'People Also Search For'",
       ['ytd-search ytd-item-section-renderer > #contents > ytd-horizontal-card-list-renderer']),
 
-    // One master toggle; per-place options are greyed out while it is on.
-    shorts('hideShorts', 'Hide Shorts', [...SHORTS.nav, ...SHORTS.feed, ...SHORTS.search, ...SHORTS.other]),
-    short('hideShortsNav', "Hide 'Shorts' in Sidebar and Channel Tabs", SHORTS.nav),
-    short('hideShortsFeed', 'Hide Shorts on Home and Subscriptions', SHORTS.feed),
-    short('hideShortsSearch', 'Hide Shorts in Search', SHORTS.search),
-    short('hideShortsOther', 'Hide Shorts on Channel and Video Pages', SHORTS.other),
+    shorts('hideShorts', 'Hide Shorts', SHORTS),
   ];
 
   const STORE_KEY = 'settings';
