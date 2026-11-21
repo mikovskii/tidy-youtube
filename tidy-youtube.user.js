@@ -2,8 +2,8 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.5.0
-// @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 33 toggles.
+// @version      1.6.0
+// @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 34 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
 // @grant        GM_getValue
@@ -45,6 +45,21 @@
     `ytd-guide-entry-renderer:has(> a${href})`,
     `ytd-mini-guide-entry-renderer:has(> a${href})`,
   ];
+
+  const SHORTS = {
+    // The Shorts guide entry has no href, so match by title.
+    nav: ['ytd-guide-entry-renderer:has(> a[title="Shorts"])',
+          'ytd-mini-guide-entry-renderer:has(> a[title="Shorts"])',
+          'yt-tab-shape[tab-title="Shorts"]'],
+    feed: ['ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts])',
+           'ytd-browse ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model)'],
+    search: ['ytd-search grid-shelf-view-model:has(ytm-shorts-lockup-view-model)',
+             'ytd-search ytd-reel-shelf-renderer',
+             'ytd-search ytd-video-renderer:has(a#thumbnail[href^="/shorts/"])'],
+    other: ['ytd-browse ytd-reel-shelf-renderer',
+            'ytd-watch-flexy ytd-reel-shelf-renderer',
+            'ytd-watch-next-secondary-results-renderer yt-lockup-view-model:has(a[href^="/shorts/"])'],
+  };
 
   const OPTIONS = [
     // Home Page
@@ -125,23 +140,17 @@
       // Direct children of the results only: the same tag is used for chapters inside video cards.
       sel: ['ytd-search ytd-item-section-renderer > #contents > ytd-horizontal-card-list-renderer'] },
 
-    // Shorts
-    { key: 'hideShortsNav', section: 'Shorts', group: 'Navigation', label: "Hide 'Shorts' in Sidebar and Channel Tabs",
-      // The Shorts guide entry has no href, so match by title.
-      sel: ['ytd-guide-entry-renderer:has(> a[title="Shorts"])',
-            'ytd-mini-guide-entry-renderer:has(> a[title="Shorts"])',
-            'yt-tab-shape[tab-title="Shorts"]'] },
-    { key: 'hideShortsFeed', section: 'Shorts', group: 'Feeds', label: 'Hide Shorts on Home and Subscriptions',
-      sel: ['ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts])',
-            'ytd-browse ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model)'] },
-    { key: 'hideShortsSearch', section: 'Shorts', group: 'Feeds', label: 'Hide Shorts in Search',
-      sel: ['ytd-search grid-shelf-view-model:has(ytm-shorts-lockup-view-model)',
-            'ytd-search ytd-reel-shelf-renderer',
-            'ytd-search ytd-video-renderer:has(a#thumbnail[href^="/shorts/"])'] },
-    { key: 'hideShortsOther', section: 'Shorts', group: 'Feeds', label: 'Hide Shorts on Channel and Video Pages',
-      sel: ['ytd-browse ytd-reel-shelf-renderer',
-            'ytd-watch-flexy ytd-reel-shelf-renderer',
-            'ytd-watch-next-secondary-results-renderer yt-lockup-view-model:has(a[href^="/shorts/"])'] },
+    // Shorts: one master toggle, per-place options nested under it (greyed out while it is on).
+    { key: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts',
+      sel: [...SHORTS.nav, ...SHORTS.feed, ...SHORTS.search, ...SHORTS.other] },
+    { key: 'hideShortsNav', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: "Hide 'Shorts' in Sidebar and Channel Tabs",
+      sel: SHORTS.nav },
+    { key: 'hideShortsFeed', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts on Home and Subscriptions',
+      sel: SHORTS.feed },
+    { key: 'hideShortsSearch', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts in Search',
+      sel: SHORTS.search },
+    { key: 'hideShortsOther', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts on Channel and Video Pages',
+      sel: SHORTS.other },
   ];
 
   const STORE_KEY = 'settings';
@@ -377,9 +386,16 @@
         body.hidden = collapsed.has(sec);
         let group = null;
         const shown = new Set(opts.map((o) => o.key));
+        // Group labels only help when a section has several groups and at least one holds more than one option.
+        const groupSizes = new Map();
+        for (const o of opts) groupSizes.set(o.group, (groupSizes.get(o.group) || 0) + 1);
+        const showGroups = groupSizes.size > 1 && [...groupSizes.values()].some((n) => n > 1);
         for (const o of opts) {
           if (o.parent && shown.has(o.parent)) continue; // rendered inside its parent card
-          if (o.group !== group) { body.appendChild(el('div', { class: 'grp', text: o.group })); group = o.group; }
+          if (o.group !== group) {
+            if (showGroups) body.appendChild(el('div', { class: 'grp', text: o.group }));
+            group = o.group;
+          }
           const kids = opts.filter((c) => c.parent === o.key);
           if (!kids.length) { body.appendChild(toggleRow(o)); continue; }
           body.appendChild(el('div', { class: 'pc' }, [

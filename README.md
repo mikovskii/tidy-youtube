@@ -1,6 +1,6 @@
 # Tidy for YouTube
 
-A Tampermonkey userscript that hides clutter in the YouTube interface: Shorts, inserted shelves, extra buttons and more. 33 toggles: the core set is enabled by default, the extra comment options are off.
+A Tampermonkey userscript that hides clutter in the YouTube interface: Shorts, inserted shelves, extra buttons and more. 34 toggles: the core set is enabled by default, the extra comment options are off.
 
 ## Install
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
@@ -18,7 +18,7 @@ A Tampermonkey userscript that hides clutter in the YouTube interface: Shorts, i
 | Video Page | Watermark, hashtags, Join, Download; grayscale channel avatar |
 | Video Page → Comments | Hide Comments (off), with nested options greyed out while it is on: count, add-comment field, sort, avatars (on), grayscale avatars, published time, likes count, Like / Dislike / Reply buttons, creator heart, replies |
 | Search Page | For You / Trending shelves, People Also Search For |
-| Shorts | Sidebar entry and channel tab, Home and Subscriptions, Search, Channel and Video pages |
+| Shorts | Hide Shorts (on) everywhere, or per place while it is off: sidebar entry and channel tab, Home and Subscriptions, Search, Channel and Video pages |
 
 ## How it works
 - Every option is pure CSS: one `<style>` element plus `data-tidy-*` attributes on `<html>`. No MutationObserver, no timers, no DOM traversal.
