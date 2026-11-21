@@ -2,8 +2,8 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.3.1
-// @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 21 toggles.
+// @version      1.4.0
+// @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 33 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
 // @grant        GM_getValue
@@ -23,8 +23,9 @@
  *      { key: 'hideFoo', section: 'Video Page', group: 'Actions',
  *        label: "Hide 'Foo'", sel: ['ytd-foo-renderer'] }
  *    - sel  — CSS selectors (each gets the html[data-tidy-hide-foo] prefix automatically);
- *    - mode — 'hide' (default, display:none) or 'gray' (filter:grayscale, use on <img> only).
- * 2. That's it. The default (true), the <html> attribute, the CSS rule and the panel
+ *    - mode — 'hide' (default, display:none) or 'gray' (filter:grayscale, use on <img> only);
+ *    - def  — set to false to make the option off by default.
+ * 2. That's it. The default, the <html> attribute, the CSS rule and the panel
  *    toggle are all generated. Every option is pure CSS — no JS touches the page DOM.
  *
  * All rules live in ONE <style> element, injected once at document-start.
@@ -87,8 +88,34 @@
       sel: ['ytd-watch-metadata #sponsor-button'] },
     { key: 'hideDownloadButton', section: 'Video Page', group: 'Actions', label: "Hide 'Download' Button",
       sel: ['ytd-download-button-renderer', 'ytd-menu-service-item-download-renderer'] },
-    { key: 'hideCommentAvatars', section: 'Video Page', group: 'Comments', label: 'Hide Comment Avatar',
+
+    // Comments (everything except avatars is off by default)
+    { key: 'hideComments', section: 'Comments', group: 'Comments Section', label: 'Hide Comments', def: false,
+      sel: ['ytd-watch-flexy ytd-comments#comments', 'ytd-comments-entry-point-header-renderer'] },
+    { key: 'hideCommentsCount', section: 'Comments', group: 'Comments Section', label: 'Hide Comments Count', def: false,
+      sel: ['ytd-comments-header-renderer #count'] },
+    { key: 'hideAddComment', section: 'Comments', group: 'Comments Section', label: "Hide 'Add Comment' Textfield", def: false,
+      sel: ['ytd-comments-header-renderer ytd-comment-simplebox-renderer'] },
+    { key: 'hideCommentsSort', section: 'Comments', group: 'Comments Section', label: 'Hide Comments Sort Button', def: false,
+      sel: ['ytd-comments-header-renderer #sort-menu'] },
+    { key: 'hideCommentAvatars', section: 'Comments', group: 'Comment', label: 'Hide Comment Avatar',
       sel: ['ytd-comment-view-model #author-thumbnail', 'ytd-comment-renderer #author-thumbnail'] },
+    { key: 'grayscaleCommentAvatars', section: 'Comments', group: 'Comment', label: 'Grayscale Comment Avatar', def: false,
+      mode: 'gray', sel: ['ytd-comment-view-model #author-thumbnail img'] },
+    { key: 'hideCommentTime', section: 'Comments', group: 'Comment', label: 'Hide Comment Published Time', def: false,
+      sel: ['ytd-comment-view-model #published-time-text'] },
+    { key: 'hideCommentReplies', section: 'Comments', group: 'Comment', label: 'Hide Comment Replies', def: false,
+      sel: ['ytd-comment-thread-renderer > #replies'] },
+    { key: 'hideCommentLikeCount', section: 'Comments', group: 'Comment Actions', label: 'Hide Likes Count of Comment', def: false,
+      sel: ['ytd-comment-engagement-bar #vote-count-middle'] },
+    { key: 'hideCommentLike', section: 'Comments', group: 'Comment Actions', label: "Hide 'Like' Comment Button", def: false,
+      sel: ['ytd-comment-engagement-bar #like-button'] },
+    { key: 'hideCommentDislike', section: 'Comments', group: 'Comment Actions', label: "Hide 'Dislike' Comment Button", def: false,
+      sel: ['ytd-comment-engagement-bar #dislike-button'] },
+    { key: 'hideCommentReply', section: 'Comments', group: 'Comment Actions', label: "Hide 'Reply' Comment Button", def: false,
+      sel: ['ytd-comment-engagement-bar #reply-button-end'] },
+    { key: 'hideCreatorHeart', section: 'Comments', group: 'Comment Actions', label: 'Hide Like from the Video Creator', def: false,
+      sel: ['ytd-comment-engagement-bar #creator-heart'] },
 
     // Search Page
     { key: 'hideSearchShelves', section: 'Search Page', group: 'Results', label: 'Hide For You, Trending, etc',
@@ -120,7 +147,7 @@
   const STORE_KEY = 'settings';
   const root = document.documentElement;
   const attrOf = (key) => 'data-tidy-' + key.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
-  const DEFAULTS = Object.fromEntries(OPTIONS.map((o) => [o.key, true]));
+  const DEFAULTS = Object.fromEntries(OPTIONS.map((o) => [o.key, o.def !== false]));
 
   // ---------------------------------------------------------------------------
   // Settings: read once at startup, written only when an option changes.
