@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
-// @version      1.2.0
+// @author       mikovskii
+// @version      1.2.1
 // @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 21 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
