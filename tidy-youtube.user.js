@@ -2,7 +2,7 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.6.0
+// @version      1.7.0
 // @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 34 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
@@ -23,9 +23,8 @@
  *      { key: 'hideFoo', section: 'Video Page', group: 'Actions',
  *        label: "Hide 'Foo'", sel: ['ytd-foo-renderer'] }
  *    - sel  — CSS selectors (each gets the html[data-tidy-hide-foo] prefix automatically);
- *    - mode — 'hide' (default, display:none) or 'gray' (filter:grayscale, use on <img> only);
- *    - def  — set to false to make the option off by default.
- * 2. That's it. The default, the <html> attribute, the CSS rule and the panel
+ *    - mode — 'hide' (default, display:none) or 'gray' (filter:grayscale, use on <img> only).
+ * 2. That's it. The default (off), the <html> attribute, the CSS rule and the panel
  *    toggle are all generated. Every option is pure CSS — no JS touches the page DOM.
  *
  * All rules live in ONE <style> element, injected once at document-start.
@@ -105,31 +104,31 @@
       sel: ['ytd-download-button-renderer', 'ytd-menu-service-item-download-renderer'] },
 
     // Video Page -> Comments. Children (parent: 'hideComments') are greyed out while the whole section is hidden.
-    { key: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments', def: false,
+    { key: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments',
       sel: ['ytd-watch-flexy ytd-comments#comments', 'ytd-comments-entry-point-header-renderer'] },
-    { key: 'hideCommentsCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Count', def: false,
+    { key: 'hideCommentsCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Count',
       sel: ['ytd-comments-header-renderer #count'] },
-    { key: 'hideAddComment', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Add Comment' Textfield", def: false,
+    { key: 'hideAddComment', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Add Comment' Textfield",
       sel: ['ytd-comments-header-renderer ytd-comment-simplebox-renderer'] },
-    { key: 'hideCommentsSort', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Sort Button', def: false,
+    { key: 'hideCommentsSort', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Sort Button',
       sel: ['ytd-comments-header-renderer #sort-menu'] },
     { key: 'hideCommentAvatars', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Avatar',
       sel: ['ytd-comment-view-model #author-thumbnail', 'ytd-comment-renderer #author-thumbnail'] },
-    { key: 'grayscaleCommentAvatars', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Grayscale Comment Avatar', def: false,
+    { key: 'grayscaleCommentAvatars', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Grayscale Comment Avatar',
       mode: 'gray', sel: ['ytd-comment-view-model #author-thumbnail img'] },
-    { key: 'hideCommentTime', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Published Time', def: false,
+    { key: 'hideCommentTime', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Published Time',
       sel: ['ytd-comment-view-model #published-time-text'] },
-    { key: 'hideCommentLikeCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Likes Count of Comment', def: false,
+    { key: 'hideCommentLikeCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Likes Count of Comment',
       sel: ['ytd-comment-engagement-bar #vote-count-middle'] },
-    { key: 'hideCommentLike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Like' Comment Button", def: false,
+    { key: 'hideCommentLike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Like' Comment Button",
       sel: ['ytd-comment-engagement-bar #like-button'] },
-    { key: 'hideCommentDislike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Dislike' Comment Button", def: false,
+    { key: 'hideCommentDislike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Dislike' Comment Button",
       sel: ['ytd-comment-engagement-bar #dislike-button'] },
-    { key: 'hideCommentReply', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Reply' Comment Button", def: false,
+    { key: 'hideCommentReply', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Reply' Comment Button",
       sel: ['ytd-comment-engagement-bar #reply-button-end'] },
-    { key: 'hideCreatorHeart', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Like from the Video Creator', def: false,
+    { key: 'hideCreatorHeart', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Like from the Video Creator',
       sel: ['ytd-comment-engagement-bar #creator-heart'] },
-    { key: 'hideCommentReplies', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Replies', def: false,
+    { key: 'hideCommentReplies', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Replies',
       sel: ['ytd-comment-thread-renderer > #replies'] },
 
     // Search Page
@@ -156,7 +155,8 @@
   const STORE_KEY = 'settings';
   const root = document.documentElement;
   const attrOf = (key) => 'data-tidy-' + key.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
-  const DEFAULTS = Object.fromEntries(OPTIONS.map((o) => [o.key, o.def !== false]));
+  // Everything starts off: users opt in to what they want hidden.
+  const DEFAULTS = Object.fromEntries(OPTIONS.map((o) => [o.key, false]));
 
   // ---------------------------------------------------------------------------
   // Settings: read once at startup, written only when an option changes.
