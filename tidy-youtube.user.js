@@ -2,7 +2,7 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.3.0
+// @version      1.3.1
 // @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 21 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
@@ -191,22 +191,14 @@
     button{font:inherit;color:inherit}
     .ib{display:grid;place-items:center;width:34px;height:34px;background:none;border:0;border-radius:10px;color:#9aa0a6;cursor:pointer}
     .ib:hover{background:#252a32;color:#fff}
-    .bar{position:relative;display:flex;gap:10px;padding:10px 16px 6px}
-    .sq,.dd{height:54px;background:#1d2128;border:1px solid #2a2f37;border-radius:14px;cursor:pointer}
-    .sq{display:grid;place-items:center;width:54px;flex:none;color:#e8eaed}
-    .dd{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;text-align:left}
-    .sq:hover,.dd:hover{background:#232830}
+    .bar{display:flex;padding:10px 16px 6px}
+    .dd{height:54px;background:#1d2128;border:1px solid #2a2f37;border-radius:14px;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;text-align:left}
+    .dd:hover{background:#232830}
     .dd-t{display:flex;flex-direction:column;line-height:1.25}
     .dd-l{font-size:12px;color:#9aa0a6}
     .dd-v{font-size:16px;font-weight:700}
     .dd svg{color:#9aa0a6}
-    .menu{position:absolute;top:68px;left:16px;z-index:3;min-width:240px;padding:8px;background:#1d2128;border:1px solid #333944;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
     .cap{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#80868e;padding:16px 4px 8px}
-    .menu .cap{padding:8px 10px 6px}
-    .mi{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:11px 10px;border-radius:10px;text-align:left;cursor:pointer}
-    .mi:hover{background:#262b33}
-    .mi svg{color:#80868e}
-    .sep{height:1px;background:#2a2f37;margin:6px 4px}
     .scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 16px}
     .sh{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;padding:20px 2px 6px;text-align:left;cursor:pointer}
     .sh h2{flex:1;margin:0;font-size:20px;font-weight:700}
@@ -240,14 +232,11 @@
 
   // Stroke icons (24x24), built with createElementNS.
   const ICONS = {
-    menu: 'M4 7h16M4 12h16M4 17h16',
     close: 'M6 6l12 12M18 6L6 18',
     chev: 'M6 9l6 6 6-6',
     search: 'M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13zM20 20l-4.8-4.8',
     grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
     sliders: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
-    check: 'M5 12.5l4.5 4.5L19 7.5',
-    reset: 'M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5',
   };
   const icon = (name, size = 20) => {
     const NS = 'http://www.w3.org/2000/svg';
@@ -350,24 +339,6 @@
       refreshCounts();
     };
 
-    const bulk = (fn) => {
-      for (const o of OPTIONS) setOption(o.key, fn(o));
-      save();
-      renderList();
-    };
-
-    // --- Actions menu (hamburger) --------------------------------------------
-    const menuItem = (text, ico, fn) => el('button', {
-      class: 'mi', type: 'button', role: 'menuitem',
-      onclick: () => { fn(); menu.hidden = true; },
-    }, [el('span', { text }), icon(ico, 18)]);
-    const menu = el('div', { class: 'menu', role: 'menu', hidden: '' }, [
-      el('div', { class: 'cap', text: 'Actions' }),
-      menuItem('Enable all', 'check', () => bulk(() => true)),
-      menuItem('Disable all', 'close', () => bulk(() => false)),
-      el('div', { class: 'sep' }),
-      menuItem('Reset to defaults', 'reset', () => bulk((o) => DEFAULTS[o.key])),
-    ]);
 
     // --- Browse sheet --------------------------------------------------------
     const sheetBody = el('div', { class: 'sheet-body' });
@@ -411,7 +382,6 @@
       sheetBody,
     ]);
     const openSheet = () => {
-      menu.hidden = true;
       search.value = '';
       renderSheet();
       sheet.hidden = false;
@@ -425,10 +395,6 @@
     };
 
     // --- Shell ---------------------------------------------------------------
-    const menuBtn = el('button', {
-      class: 'sq', type: 'button', 'aria-label': 'Actions', 'aria-haspopup': 'menu',
-      onclick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; },
-    }, [icon('menu', 22)]);
     const browseBtn = el('button', {
       class: 'dd', type: 'button', 'aria-haspopup': 'dialog', onclick: openSheet,
     }, [el('span', { class: 'dd-t' }, [el('span', { class: 'dd-l', text: 'Browse' }), browseValue]), icon('chev')]);
@@ -443,19 +409,17 @@
       e.stopPropagation();
       e.preventDefault();
       if (!sheet.hidden) closeSheet();
-      else if (!menu.hidden) menu.hidden = true;
       else close();
     };
 
     const pn = el('div', {
       class: 'pn', role: 'dialog', 'aria-label': 'Tidy for YouTube',
-      onclick: (e) => { if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true; },
     }, [
       el('div', { class: 'hd' }, [
         el('h1', { text: 'Tidy for YouTube' }),
         el('button', { class: 'ib', type: 'button', 'aria-label': 'Close', onclick: close }, [icon('close')]),
       ]),
-      el('div', { class: 'bar' }, [menuBtn, browseBtn, menu]),
+      el('div', { class: 'bar' }, [browseBtn]),
       list,
       sheet,
     ]);
