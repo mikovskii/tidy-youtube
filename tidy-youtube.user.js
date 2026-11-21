@@ -2,7 +2,8 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.8.0
+// @license      MIT
+// @version      1.9.0
 // @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 34 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
@@ -19,24 +20,26 @@
 
 /*
  * HOW TO ADD A NEW OPTION
- * 1. Add an object to the OPTIONS array below:
- *      { key: 'hideFoo', section: 'Video Page', group: 'Actions',
- *        label: "Hide 'Foo'", sel: ['ytd-foo-renderer'] }
- *    - sel  — CSS selectors for the elements to hide;
- *    - mode — 'hide' (default, display:none) or 'gray' (filter:grayscale, use on <img> only).
+ * 1. Add a line to the OPTIONS array below, using a group factory (or make a new one
+ *    with inGroup(section, group, parent?)):
+ *      details('hideFoo', "Hide 'Foo'", ['ytd-foo-renderer'])
+ *    - the third argument is a list of CSS selectors for the elements to hide;
+ *    - pass `gray` as the fourth argument to grayscale an <img> instead of hiding it;
+ *    - a factory with a parent key nests the option under that master toggle.
  * 2. That's it. The default (off), the CSS rule and the panel toggle are generated.
  *    Every option is pure CSS — no JS touches the page DOM.
  *
  * One <style> element holds the rules of the ENABLED options only, so disabled options
  * cost nothing (not even :has() matching). It is rewritten only when a toggle changes.
  * No observers, no timers, no event listeners on the page.
+ *
+ * DEBUGGING: Tampermonkey menu -> "Tidy: check selectors on this page" prints a table of
+ * every selector and how many elements it matches here. A selector with 0 matches on a
+ * page where the element is visible means YouTube changed its markup.
  */
 
 (() => {
   'use strict';
-
-  const DEBUG = false;
-  const log = DEBUG ? (...a) => console.log('[Tidy]', ...a) : () => {};
 
   // ---------------------------------------------------------------------------
   // Config: every selector lives here. Verified against live YouTube (Nov 2026).
@@ -61,96 +64,79 @@
             'ytd-watch-next-secondary-results-renderer yt-lockup-view-model:has(a[href^="/shorts/"])'],
   };
 
+  // Option factory: in(section, group, parent?)(key, label, selectors, extra?)
+  const inGroup = (section, group, parent) => (key, label, sel, extra) =>
+    ({ key, label, sel, section, group, ...(parent && { parent }), ...extra });
+  const gray = { mode: 'gray' };
+
+  const home = inGroup('Home Page', 'Suggestions');
+  const subs = inGroup('Left Navigation Bar', 'Subscriptions Section');
+  const explore = inGroup('Left Navigation Bar', 'Explore Section');
+  const moreYt = inGroup('Left Navigation Bar', 'More from YouTube Section');
+  const header = inGroup('Header', 'Header');
+  const player = inGroup('Video Page', 'Player');
+  const details = inGroup('Video Page', 'Video Details');
+  const comments = inGroup('Video Page', 'Comments');
+  const comment = inGroup('Video Page', 'Comments', 'hideComments');
+  const search = inGroup('Search Page', 'Search Results');
+  const shorts = inGroup('Shorts', 'Shorts');
+  const short = inGroup('Shorts', 'Shorts', 'hideShorts');
+
   const OPTIONS = [
-    // Home Page
-    { key: 'hideHomeShelves', section: 'Home Page', group: 'Suggestions', label: 'Hide Breaking News, Trending and etc.',
-      // The Shorts shelf (is-shorts) is handled by hideShortsFeed.
-      sel: ['ytd-browse[page-subtype="home"] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:not([is-shorts]))'] },
+    // The Shorts shelf (is-shorts) is left to the Shorts options.
+    home('hideHomeShelves', 'Hide Breaking News, Trending and etc.',
+      ['ytd-browse[page-subtype="home"] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:not([is-shorts]))']),
 
-    // Left Navigation Bar
-    { key: 'grayscaleSubAvatars', section: 'Left Navigation Bar', group: 'Subscriptions Section', label: 'Grayscale Subscriptions Avatars',
-      mode: 'gray',
-      // Subscriptions sit directly in a section's #items; your own avatar is in the 'You' #section-items and is skipped.
-      sel: ['ytd-guide-section-renderer #items > ytd-guide-entry-renderer > a img',
-            'ytd-guide-collapsible-entry-renderer #expandable-items > ytd-guide-entry-renderer > a img'] },
-    { key: 'hideMovies', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'Movies' Button",
-      sel: guide('[href^="/feed/storefront"]') },
-    { key: 'hideGaming', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'Gaming' Button",
-      sel: [...guide('[href="/gaming"]'), ...guide('[href^="/channel/UCOpNcN46UbXVtpKMrmU4Abg"]')] },
-    { key: 'hideNews', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'News' Button",
-      sel: guide('[href^="/channel/UCYfdidRxbB8Qhf0Nx7ioOYw"]') },
-    { key: 'hideSports', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'Sports' Button",
-      sel: guide('[href^="/channel/UCEgdi0XIXXZ-qJOFPf4JSKw"]') },
-    { key: 'hideKids', section: 'Left Navigation Bar', group: 'More from YouTube Section', label: "Hide 'Kids' Button",
-      sel: guide('[href*="youtubekids.com"]') },
+    // Subscriptions sit directly in a section's #items; your own avatar is in the 'You' #section-items and is skipped.
+    subs('grayscaleSubAvatars', 'Grayscale Subscriptions Avatars',
+      ['ytd-guide-section-renderer #items > ytd-guide-entry-renderer > a img',
+       'ytd-guide-collapsible-entry-renderer #expandable-items > ytd-guide-entry-renderer > a img'], gray),
+    explore('hideMovies', "Hide 'Movies' Button", guide('[href^="/feed/storefront"]')),
+    explore('hideGaming', "Hide 'Gaming' Button",
+      [...guide('[href="/gaming"]'), ...guide('[href^="/channel/UCOpNcN46UbXVtpKMrmU4Abg"]')]),
+    explore('hideNews', "Hide 'News' Button", guide('[href^="/channel/UCYfdidRxbB8Qhf0Nx7ioOYw"]')),
+    explore('hideSports', "Hide 'Sports' Button", guide('[href^="/channel/UCEgdi0XIXXZ-qJOFPf4JSKw"]')),
+    moreYt('hideKids', "Hide 'Kids' Button", guide('[href*="youtubekids.com"]')),
 
-    // Header
-    { key: 'hideVoiceSearch', section: 'Header', group: 'Search Bar', label: "Hide 'Voice Search' Button",
-      sel: ['ytd-masthead #voice-search-button'] },
-    { key: 'hideCreateButton', section: 'Header', group: 'Header Buttons', label: "Hide 'Create' Button",
-      // 'Create' is the ytd-button-renderer right before the bell. The guest 'Sign in' button never matches.
-      sel: ['ytd-masthead #buttons > ytd-button-renderer:has(+ ytd-notification-topbar-button-renderer)',
-            'ytd-masthead #buttons > ytd-topbar-menu-button-renderer:has(+ ytd-notification-topbar-button-renderer)'] },
+    header('hideVoiceSearch', "Hide 'Voice Search' Button", ['ytd-masthead #voice-search-button']),
+    // 'Create' is the ytd-button-renderer right before the bell. The guest 'Sign in' button never matches.
+    header('hideCreateButton', "Hide 'Create' Button",
+      ['ytd-masthead #buttons > ytd-button-renderer:has(+ ytd-notification-topbar-button-renderer)',
+       'ytd-masthead #buttons > ytd-topbar-menu-button-renderer:has(+ ytd-notification-topbar-button-renderer)']),
 
-    // Video Page
-    { key: 'hideWatermark', section: 'Video Page', group: 'Player', label: 'Hide Watermark',
-      sel: ['#movie_player .ytp-watermark', '#movie_player .iv-branding'] },
-    { key: 'hideHashtags', section: 'Video Page', group: 'Video Details', label: 'Hide Video Hashtags',
-      sel: ['ytd-watch-metadata #super-title', 'ytd-watch-metadata a[href^="/hashtag/"]'] },
-    { key: 'grayscaleChannelAvatar', section: 'Video Page', group: 'Video Details', label: 'Grayscale Channel Avatar',
-      mode: 'gray', sel: ['ytd-watch-metadata #owner #avatar img'] },
-    { key: 'hideJoinButton', section: 'Video Page', group: 'Video Details', label: "Hide 'Join' Button",
-      sel: ['ytd-watch-metadata #sponsor-button'] },
-    { key: 'hideDownloadButton', section: 'Video Page', group: 'Video Details', label: "Hide 'Download' Button",
-      sel: ['ytd-download-button-renderer', 'ytd-menu-service-item-download-renderer'] },
+    player('hideWatermark', 'Hide Watermark', ['#movie_player .ytp-watermark', '#movie_player .iv-branding']),
+    details('hideHashtags', 'Hide Video Hashtags', ['ytd-watch-metadata #super-title', 'ytd-watch-metadata a[href^="/hashtag/"]']),
+    details('grayscaleChannelAvatar', 'Grayscale Channel Avatar', ['ytd-watch-metadata #owner #avatar img'], gray),
+    details('hideJoinButton', "Hide 'Join' Button", ['ytd-watch-metadata #sponsor-button']),
+    details('hideDownloadButton', "Hide 'Download' Button", ['ytd-download-button-renderer', 'ytd-menu-service-item-download-renderer']),
 
-    // Video Page -> Comments. Children (parent: 'hideComments') are greyed out while the whole section is hidden.
-    { key: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments',
-      sel: ['ytd-watch-flexy ytd-comments#comments', 'ytd-comments-entry-point-header-renderer'] },
-    { key: 'hideCommentsCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Count',
-      sel: ['ytd-comments-header-renderer #count'] },
-    { key: 'hideAddComment', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Add Comment' Textfield",
-      sel: ['ytd-comments-header-renderer ytd-comment-simplebox-renderer'] },
-    { key: 'hideCommentsSort', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Sort Button',
-      sel: ['ytd-comments-header-renderer #sort-menu'] },
-    { key: 'hideCommentAvatars', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Avatar',
-      sel: ['ytd-comment-view-model #author-thumbnail', 'ytd-comment-renderer #author-thumbnail'] },
-    { key: 'grayscaleCommentAvatars', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Grayscale Comment Avatar',
-      mode: 'gray', sel: ['ytd-comment-view-model #author-thumbnail img'] },
-    { key: 'hideCommentTime', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Published Time',
-      sel: ['ytd-comment-view-model #published-time-text'] },
-    { key: 'hideCommentLikeCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Likes Count of Comment',
-      sel: ['ytd-comment-engagement-bar #vote-count-middle'] },
-    { key: 'hideCommentLike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Like' Comment Button",
-      sel: ['ytd-comment-engagement-bar #like-button'] },
-    { key: 'hideCommentDislike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Dislike' Comment Button",
-      sel: ['ytd-comment-engagement-bar #dislike-button'] },
-    { key: 'hideCommentReply', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Reply' Comment Button",
-      sel: ['ytd-comment-engagement-bar #reply-button-end'] },
-    { key: 'hideCreatorHeart', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Like from the Video Creator',
-      sel: ['ytd-comment-engagement-bar #creator-heart'] },
-    { key: 'hideCommentReplies', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Replies',
-      sel: ['ytd-comment-thread-renderer > #replies'] },
+    // Hiding the whole section also stops YouTube from loading comments. Children are greyed out while it is on.
+    comments('hideComments', 'Hide Comments', ['ytd-watch-flexy ytd-comments#comments', 'ytd-comments-entry-point-header-renderer']),
+    comment('hideCommentsCount', 'Hide Comments Count', ['ytd-comments-header-renderer #count']),
+    comment('hideAddComment', "Hide 'Add Comment' Textfield", ['ytd-comments-header-renderer ytd-comment-simplebox-renderer']),
+    comment('hideCommentsSort', 'Hide Comments Sort Button', ['ytd-comments-header-renderer #sort-menu']),
+    comment('hideCommentAvatars', 'Hide Comment Avatar', ['ytd-comment-view-model #author-thumbnail', 'ytd-comment-renderer #author-thumbnail']),
+    comment('grayscaleCommentAvatars', 'Grayscale Comment Avatar', ['ytd-comment-view-model #author-thumbnail img'], gray),
+    comment('hideCommentTime', 'Hide Comment Published Time', ['ytd-comment-view-model #published-time-text']),
+    comment('hideCommentLikeCount', 'Hide Likes Count of Comment', ['ytd-comment-engagement-bar #vote-count-middle']),
+    comment('hideCommentLike', "Hide 'Like' Comment Button", ['ytd-comment-engagement-bar #like-button']),
+    comment('hideCommentDislike', "Hide 'Dislike' Comment Button", ['ytd-comment-engagement-bar #dislike-button']),
+    comment('hideCommentReply', "Hide 'Reply' Comment Button", ['ytd-comment-engagement-bar #reply-button-end']),
+    comment('hideCreatorHeart', 'Hide Like from the Video Creator', ['ytd-comment-engagement-bar #creator-heart']),
+    comment('hideCommentReplies', 'Hide Comment Replies', ['ytd-comment-thread-renderer > #replies']),
 
-    // Search Page
-    { key: 'hideSearchShelves', section: 'Search Page', group: 'Search Results', label: 'Hide For You, Trending, etc',
-      // Shorts shelves in search are grid-shelf-view-model / ytd-reel-shelf-renderer and are not matched.
-      sel: ['ytd-search ytd-item-section-renderer > #contents > ytd-shelf-renderer'] },
-    { key: 'hidePeopleAlsoSearch', section: 'Search Page', group: 'Search Results', label: "Hide 'People Also Search For'",
-      // Direct children of the results only: the same tag is used for chapters inside video cards.
-      sel: ['ytd-search ytd-item-section-renderer > #contents > ytd-horizontal-card-list-renderer'] },
+    // Shorts shelves in search are grid-shelf-view-model / ytd-reel-shelf-renderer and are not matched.
+    search('hideSearchShelves', 'Hide For You, Trending, etc', ['ytd-search ytd-item-section-renderer > #contents > ytd-shelf-renderer']),
+    // Direct children of the results only: the same tag is used for chapters inside video cards.
+    search('hidePeopleAlsoSearch', "Hide 'People Also Search For'",
+      ['ytd-search ytd-item-section-renderer > #contents > ytd-horizontal-card-list-renderer']),
 
-    // Shorts: one master toggle, per-place options nested under it (greyed out while it is on).
-    { key: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts',
-      sel: [...SHORTS.nav, ...SHORTS.feed, ...SHORTS.search, ...SHORTS.other] },
-    { key: 'hideShortsNav', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: "Hide 'Shorts' in Sidebar and Channel Tabs",
-      sel: SHORTS.nav },
-    { key: 'hideShortsFeed', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts on Home and Subscriptions',
-      sel: SHORTS.feed },
-    { key: 'hideShortsSearch', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts in Search',
-      sel: SHORTS.search },
-    { key: 'hideShortsOther', parent: 'hideShorts', section: 'Shorts', group: 'Shorts', label: 'Hide Shorts on Channel and Video Pages',
-      sel: SHORTS.other },
+    // One master toggle; per-place options are greyed out while it is on.
+    shorts('hideShorts', 'Hide Shorts', [...SHORTS.nav, ...SHORTS.feed, ...SHORTS.search, ...SHORTS.other]),
+    short('hideShortsNav', "Hide 'Shorts' in Sidebar and Channel Tabs", SHORTS.nav),
+    short('hideShortsFeed', 'Hide Shorts on Home and Subscriptions', SHORTS.feed),
+    short('hideShortsSearch', 'Hide Shorts in Search', SHORTS.search),
+    short('hideShortsOther', 'Hide Shorts on Channel and Video Pages', SHORTS.other),
   ];
 
   const STORE_KEY = 'settings';
@@ -183,8 +169,10 @@
   style.id = 'tidy-youtube';
   const ruleOf = (o) => o.sel.join(',\n') +
     (o.mode === 'gray' ? '{filter:grayscale(1)!important}' : '{display:none!important}');
+  // A child's rule is redundant while its parent is on (the parent hides the whole area).
+  const isActive = (o) => settings[o.key] && !(o.parent && settings[o.parent]);
   const applyCss = () => {
-    style.textContent = OPTIONS.filter((o) => settings[o.key]).map(ruleOf).join('\n');
+    style.textContent = OPTIONS.filter(isActive).map(ruleOf).join('\n');
   };
   applyCss();
   (document.head || document.documentElement).appendChild(style);
@@ -202,7 +190,6 @@
       load(val || {});
       applyCss();
       if (panel) panel.refresh();
-      log('synced from another tab');
     });
   }
 
@@ -504,6 +491,42 @@
     browseBtn.focus({ preventScroll: true });
   };
 
+  // ---------------------------------------------------------------------------
+  // Debug: on-demand selector report. Runs only when picked from the menu.
+  // ---------------------------------------------------------------------------
+  const toast = (text) => {
+    const host = el('div');
+    const shadow = host.attachShadow({ mode: 'closed' });
+    shadow.append(
+      el('style', { text: ':host{all:initial}div{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483647;max-width:min(520px,calc(100vw - 32px));padding:12px 16px;border-radius:12px;background:#1d2128;border:1px solid #333944;color:#e8eaed;font:14px/1.4 Roboto,-apple-system,"Segoe UI",sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.5)}' }),
+      el('div', { text }),
+    );
+    (document.body || document.documentElement).appendChild(host);
+    setTimeout(() => host.remove(), 6000);
+  };
+
+  const debugReport = () => {
+    const rows = [];
+    for (const o of OPTIONS) {
+      for (const sel of o.sel) {
+        let matches;
+        try { matches = document.querySelectorAll(sel).length; } catch (_) { matches = 'INVALID'; }
+        rows.push({ section: o.section, option: o.key, enabled: settings[o.key], matches, selector: sel });
+      }
+    }
+    const found = new Set(rows.filter((r) => r.matches > 0).map((r) => r.option));
+    const invalid = rows.filter((r) => r.matches === 'INVALID');
+    /* eslint-disable no-console */
+    console.groupCollapsed(`[Tidy] ${location.pathname}: ${found.size}/${OPTIONS.length} options match elements on this page`);
+    console.table(rows);
+    console.log('Options with no matches here:', OPTIONS.filter((o) => !found.has(o.key)).map((o) => o.key));
+    if (invalid.length) console.warn('[Tidy] invalid selectors:', invalid);
+    console.groupEnd();
+    /* eslint-enable no-console */
+    toast(`${found.size} of ${OPTIONS.length} options match elements on this page` +
+      (invalid.length ? `, ${invalid.length} invalid selector(s)` : '') + '. Full table: DevTools console.');
+  };
+
   GM_registerMenuCommand('Tidy for YouTube settings', () => (panel ? panel.close() : openPanel()));
-  log('init done', settings);
+  GM_registerMenuCommand('Tidy: check selectors on this page', debugReport);
 })();

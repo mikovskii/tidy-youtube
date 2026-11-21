@@ -25,3 +25,12 @@ A Tampermonkey userscript that hides clutter in the YouTube interface: Shorts, i
 - The style is rewritten only when you flip a toggle. No MutationObserver, no timers, no event listeners on the page.
 - Settings sync across open tabs instantly, and saving in one tab never overwrites changes made in another.
 - All selectors live in the `OPTIONS` array at the top of the file. The header comment explains how to add a new option.
+
+## Debugging
+YouTube changes its markup from time to time, which can silently break an option. To check:
+1. Open the page where something is not hidden.
+2. Tampermonkey icon → **Tidy: check selectors on this page**.
+3. A short summary pops up, and DevTools → Console gets a table of every selector with the number of elements it matches. An option with 0 matches on a page where the element is clearly visible needs a new selector.
+
+## License
+[MIT](LICENSE)
