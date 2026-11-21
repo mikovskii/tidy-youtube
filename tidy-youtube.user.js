@@ -2,7 +2,7 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.4.0
+// @version      1.5.0
 // @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 33 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
@@ -47,81 +47,81 @@
   ];
 
   const OPTIONS = [
-    // Header
-    { key: 'hideVoiceSearch', section: 'Header', group: 'Search', label: "Hide 'Voice Search' Button",
-      sel: ['ytd-masthead #voice-search-button'] },
-    { key: 'hideCreateButton', section: 'Header', group: 'Buttons', label: "Hide 'Create' Button",
-      // 'Create' is the ytd-button-renderer right before the bell. The guest 'Sign in' button never matches.
-      sel: ['ytd-masthead #buttons > ytd-button-renderer:has(+ ytd-notification-topbar-button-renderer)',
-            'ytd-masthead #buttons > ytd-topbar-menu-button-renderer:has(+ ytd-notification-topbar-button-renderer)'] },
-
     // Home Page
-    { key: 'hideHomeShelves', section: 'Home Page', group: 'Feed', label: 'Hide Breaking News, Trending and etc.',
+    { key: 'hideHomeShelves', section: 'Home Page', group: 'Suggestions', label: 'Hide Breaking News, Trending and etc.',
       // The Shorts shelf (is-shorts) is handled by hideShortsFeed.
       sel: ['ytd-browse[page-subtype="home"] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:not([is-shorts]))'] },
 
     // Left Navigation Bar
-    { key: 'hideKids', section: 'Left Navigation Bar', group: 'More from YouTube', label: "Hide 'Kids' Button",
-      sel: guide('[href*="youtubekids.com"]') },
-    { key: 'grayscaleSubAvatars', section: 'Left Navigation Bar', group: 'Subscriptions', label: 'Grayscale Subscriptions Avatars',
+    { key: 'grayscaleSubAvatars', section: 'Left Navigation Bar', group: 'Subscriptions Section', label: 'Grayscale Subscriptions Avatars',
       mode: 'gray',
       // Subscriptions sit directly in a section's #items; your own avatar is in the 'You' #section-items and is skipped.
       sel: ['ytd-guide-section-renderer #items > ytd-guide-entry-renderer > a img',
             'ytd-guide-collapsible-entry-renderer #expandable-items > ytd-guide-entry-renderer > a img'] },
-    { key: 'hideMovies', section: 'Left Navigation Bar', group: 'Explore', label: "Hide 'Movies' Button",
+    { key: 'hideMovies', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'Movies' Button",
       sel: guide('[href^="/feed/storefront"]') },
-    { key: 'hideGaming', section: 'Left Navigation Bar', group: 'Explore', label: "Hide 'Gaming' Button",
+    { key: 'hideGaming', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'Gaming' Button",
       sel: [...guide('[href="/gaming"]'), ...guide('[href^="/channel/UCOpNcN46UbXVtpKMrmU4Abg"]')] },
-    { key: 'hideNews', section: 'Left Navigation Bar', group: 'Explore', label: "Hide 'News' Button",
+    { key: 'hideNews', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'News' Button",
       sel: guide('[href^="/channel/UCYfdidRxbB8Qhf0Nx7ioOYw"]') },
-    { key: 'hideSports', section: 'Left Navigation Bar', group: 'Explore', label: "Hide 'Sports' Button",
+    { key: 'hideSports', section: 'Left Navigation Bar', group: 'Explore Section', label: "Hide 'Sports' Button",
       sel: guide('[href^="/channel/UCEgdi0XIXXZ-qJOFPf4JSKw"]') },
+    { key: 'hideKids', section: 'Left Navigation Bar', group: 'More from YouTube Section', label: "Hide 'Kids' Button",
+      sel: guide('[href*="youtubekids.com"]') },
+
+    // Header
+    { key: 'hideVoiceSearch', section: 'Header', group: 'Search Bar', label: "Hide 'Voice Search' Button",
+      sel: ['ytd-masthead #voice-search-button'] },
+    { key: 'hideCreateButton', section: 'Header', group: 'Header Buttons', label: "Hide 'Create' Button",
+      // 'Create' is the ytd-button-renderer right before the bell. The guest 'Sign in' button never matches.
+      sel: ['ytd-masthead #buttons > ytd-button-renderer:has(+ ytd-notification-topbar-button-renderer)',
+            'ytd-masthead #buttons > ytd-topbar-menu-button-renderer:has(+ ytd-notification-topbar-button-renderer)'] },
 
     // Video Page
     { key: 'hideWatermark', section: 'Video Page', group: 'Player', label: 'Hide Watermark',
       sel: ['#movie_player .ytp-watermark', '#movie_player .iv-branding'] },
-    { key: 'grayscaleChannelAvatar', section: 'Video Page', group: 'Channel', label: 'Grayscale Channel Avatar',
-      mode: 'gray', sel: ['ytd-watch-metadata #owner #avatar img'] },
-    { key: 'hideHashtags', section: 'Video Page', group: 'Description', label: 'Hide Video Hashtags',
+    { key: 'hideHashtags', section: 'Video Page', group: 'Video Details', label: 'Hide Video Hashtags',
       sel: ['ytd-watch-metadata #super-title', 'ytd-watch-metadata a[href^="/hashtag/"]'] },
-    { key: 'hideJoinButton', section: 'Video Page', group: 'Channel', label: "Hide 'Join' Button",
+    { key: 'grayscaleChannelAvatar', section: 'Video Page', group: 'Video Details', label: 'Grayscale Channel Avatar',
+      mode: 'gray', sel: ['ytd-watch-metadata #owner #avatar img'] },
+    { key: 'hideJoinButton', section: 'Video Page', group: 'Video Details', label: "Hide 'Join' Button",
       sel: ['ytd-watch-metadata #sponsor-button'] },
-    { key: 'hideDownloadButton', section: 'Video Page', group: 'Actions', label: "Hide 'Download' Button",
+    { key: 'hideDownloadButton', section: 'Video Page', group: 'Video Details', label: "Hide 'Download' Button",
       sel: ['ytd-download-button-renderer', 'ytd-menu-service-item-download-renderer'] },
 
-    // Comments (everything except avatars is off by default)
-    { key: 'hideComments', section: 'Comments', group: 'Comments Section', label: 'Hide Comments', def: false,
+    // Video Page -> Comments. Children (parent: 'hideComments') are greyed out while the whole section is hidden.
+    { key: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments', def: false,
       sel: ['ytd-watch-flexy ytd-comments#comments', 'ytd-comments-entry-point-header-renderer'] },
-    { key: 'hideCommentsCount', section: 'Comments', group: 'Comments Section', label: 'Hide Comments Count', def: false,
+    { key: 'hideCommentsCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Count', def: false,
       sel: ['ytd-comments-header-renderer #count'] },
-    { key: 'hideAddComment', section: 'Comments', group: 'Comments Section', label: "Hide 'Add Comment' Textfield", def: false,
+    { key: 'hideAddComment', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Add Comment' Textfield", def: false,
       sel: ['ytd-comments-header-renderer ytd-comment-simplebox-renderer'] },
-    { key: 'hideCommentsSort', section: 'Comments', group: 'Comments Section', label: 'Hide Comments Sort Button', def: false,
+    { key: 'hideCommentsSort', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comments Sort Button', def: false,
       sel: ['ytd-comments-header-renderer #sort-menu'] },
-    { key: 'hideCommentAvatars', section: 'Comments', group: 'Comment', label: 'Hide Comment Avatar',
+    { key: 'hideCommentAvatars', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Avatar',
       sel: ['ytd-comment-view-model #author-thumbnail', 'ytd-comment-renderer #author-thumbnail'] },
-    { key: 'grayscaleCommentAvatars', section: 'Comments', group: 'Comment', label: 'Grayscale Comment Avatar', def: false,
+    { key: 'grayscaleCommentAvatars', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Grayscale Comment Avatar', def: false,
       mode: 'gray', sel: ['ytd-comment-view-model #author-thumbnail img'] },
-    { key: 'hideCommentTime', section: 'Comments', group: 'Comment', label: 'Hide Comment Published Time', def: false,
+    { key: 'hideCommentTime', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Published Time', def: false,
       sel: ['ytd-comment-view-model #published-time-text'] },
-    { key: 'hideCommentReplies', section: 'Comments', group: 'Comment', label: 'Hide Comment Replies', def: false,
-      sel: ['ytd-comment-thread-renderer > #replies'] },
-    { key: 'hideCommentLikeCount', section: 'Comments', group: 'Comment Actions', label: 'Hide Likes Count of Comment', def: false,
+    { key: 'hideCommentLikeCount', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Likes Count of Comment', def: false,
       sel: ['ytd-comment-engagement-bar #vote-count-middle'] },
-    { key: 'hideCommentLike', section: 'Comments', group: 'Comment Actions', label: "Hide 'Like' Comment Button", def: false,
+    { key: 'hideCommentLike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Like' Comment Button", def: false,
       sel: ['ytd-comment-engagement-bar #like-button'] },
-    { key: 'hideCommentDislike', section: 'Comments', group: 'Comment Actions', label: "Hide 'Dislike' Comment Button", def: false,
+    { key: 'hideCommentDislike', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Dislike' Comment Button", def: false,
       sel: ['ytd-comment-engagement-bar #dislike-button'] },
-    { key: 'hideCommentReply', section: 'Comments', group: 'Comment Actions', label: "Hide 'Reply' Comment Button", def: false,
+    { key: 'hideCommentReply', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: "Hide 'Reply' Comment Button", def: false,
       sel: ['ytd-comment-engagement-bar #reply-button-end'] },
-    { key: 'hideCreatorHeart', section: 'Comments', group: 'Comment Actions', label: 'Hide Like from the Video Creator', def: false,
+    { key: 'hideCreatorHeart', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Like from the Video Creator', def: false,
       sel: ['ytd-comment-engagement-bar #creator-heart'] },
+    { key: 'hideCommentReplies', parent: 'hideComments', section: 'Video Page', group: 'Comments', label: 'Hide Comment Replies', def: false,
+      sel: ['ytd-comment-thread-renderer > #replies'] },
 
     // Search Page
-    { key: 'hideSearchShelves', section: 'Search Page', group: 'Results', label: 'Hide For You, Trending, etc',
+    { key: 'hideSearchShelves', section: 'Search Page', group: 'Search Results', label: 'Hide For You, Trending, etc',
       // Shorts shelves in search are grid-shelf-view-model / ytd-reel-shelf-renderer and are not matched.
       sel: ['ytd-search ytd-item-section-renderer > #contents > ytd-shelf-renderer'] },
-    { key: 'hidePeopleAlsoSearch', section: 'Search Page', group: 'Results', label: "Hide 'People Also Search For'",
+    { key: 'hidePeopleAlsoSearch', section: 'Search Page', group: 'Search Results', label: "Hide 'People Also Search For'",
       // Direct children of the results only: the same tag is used for chapters inside video cards.
       sel: ['ytd-search ytd-item-section-renderer > #contents > ytd-horizontal-card-list-renderer'] },
 
@@ -235,6 +235,14 @@
     .grp{font-size:13px;color:#9aa0a6;padding:12px 2px 6px}
     .card{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px;padding:14px 16px;background:#1d2128;border:1px solid #2a2f37;border-radius:14px;font-size:14px;font-weight:500;cursor:pointer}
     .card:hover{background:#21262e}
+    .pc{margin-bottom:8px;padding:2px 10px 10px;background:#1d2128;border:1px solid #2a2f37;border-radius:16px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:14px;font-weight:500;cursor:pointer}
+    .pc > .row{padding:12px 6px;font-weight:600}
+    .sub{padding:0 14px;background:#181c22;border:1px solid #2a2f37;border-radius:14px}
+    .sub .row{padding:13px 0;border-bottom:1px solid #2a2f37}
+    .sub .row:last-child{border-bottom:0}
+    .row.off{opacity:.4;cursor:default}
+    .tg:disabled{cursor:default}
     .tg{appearance:none;-webkit-appearance:none;flex:none;position:relative;width:46px;height:28px;margin:0;border-radius:14px;background:#3a404a;cursor:pointer}
     .tg::after{content:"";position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#cfd3d8}
     .tg:checked{background:#5b6ee1}
@@ -309,7 +317,19 @@
       for (const [sec, span] of counters) span.textContent = `${countOn(inSection(sec))} enabled`;
     };
 
-    const toggleCard = (o) => {
+    const isLocked = (o) => !!(o.parent && settings[o.parent]);
+    const syncLocks = () => {
+      for (const o of OPTIONS) {
+        if (!o.parent || !inputs.has(o.key)) continue;
+        const locked = isLocked(o);
+        for (const i of inputs.get(o.key)) {
+          i.disabled = locked;
+          i.parentNode.classList.toggle('off', locked);
+        }
+      }
+    };
+
+    const toggleRow = (o, cls = 'card') => {
       const inp = el('input', {
         type: 'checkbox', role: 'switch', class: 'tg', 'aria-label': o.label,
         onchange: (e) => {
@@ -318,12 +338,14 @@
           save();
           for (const i of inputs.get(o.key)) i.checked = v;
           refreshCounts();
+          syncLocks();
         },
       });
       inp.checked = settings[o.key];
+      inp.disabled = isLocked(o);
       if (!inputs.has(o.key)) inputs.set(o.key, new Set());
       inputs.get(o.key).add(inp);
-      return el('label', { class: 'card' }, [el('span', { text: o.label }), inp]);
+      return el('label', { class: cls + (inp.disabled ? ' off' : '') }, [el('span', { text: o.label }), inp]);
     };
 
     // --- Main list -----------------------------------------------------------
@@ -354,9 +376,16 @@
         }, [el('h2', { text: sec }), cnt, chev]);
         body.hidden = collapsed.has(sec);
         let group = null;
+        const shown = new Set(opts.map((o) => o.key));
         for (const o of opts) {
+          if (o.parent && shown.has(o.parent)) continue; // rendered inside its parent card
           if (o.group !== group) { body.appendChild(el('div', { class: 'grp', text: o.group })); group = o.group; }
-          body.appendChild(toggleCard(o));
+          const kids = opts.filter((c) => c.parent === o.key);
+          if (!kids.length) { body.appendChild(toggleRow(o)); continue; }
+          body.appendChild(el('div', { class: 'pc' }, [
+            toggleRow(o, 'row'),
+            el('div', { class: 'sub' }, kids.map((c) => toggleRow(c, 'row'))),
+          ]));
         }
         list.append(head, body);
       }
@@ -384,7 +413,7 @@
       if (q) {
         const hits = OPTIONS.filter((o) => `${o.label} ${o.section} ${o.group}`.toLowerCase().includes(q));
         sheetBody.appendChild(el('div', { class: 'cap', text: `${hits.length} result${hits.length === 1 ? '' : 's'}` }));
-        for (const o of hits) sheetBody.appendChild(toggleCard(o));
+        for (const o of hits) sheetBody.appendChild(toggleRow(o));
         return;
       }
       const on = countOn(OPTIONS);

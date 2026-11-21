@@ -12,11 +12,11 @@ A Tampermonkey userscript that hides clutter in the YouTube interface: Shorts, i
 
 | Section | Options |
 |---|---|
-| Header | Voice search button, Create button |
 | Home Page | Breaking News / Trending and similar shelves |
-| Left Navigation Bar | Kids, Movies, Gaming, News, Sports; grayscale subscription avatars |
+| Left Navigation Bar | Grayscale subscription avatars; Movies, Gaming, News, Sports; Kids |
+| Header | Voice search button, Create button |
 | Video Page | Watermark, hashtags, Join, Download; grayscale channel avatar |
-| Comments | Comment avatars (on); off by default: whole section, count, add-comment field, sort, grayscale avatars, published time, replies, likes count, Like / Dislike / Reply buttons, creator heart |
+| Video Page → Comments | Hide Comments (off), with nested options greyed out while it is on: count, add-comment field, sort, avatars (on), grayscale avatars, published time, likes count, Like / Dislike / Reply buttons, creator heart, replies |
 | Search Page | For You / Trending shelves, People Also Search For |
 | Shorts | Sidebar entry and channel tab, Home and Subscriptions, Search, Channel and Video pages |
 
