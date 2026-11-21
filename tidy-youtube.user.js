@@ -10,6 +10,10 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_addStyle
 // @noframes
+// @homepageURL  https://github.com/mikovskii/tidy-youtube
+// @supportURL   https://github.com/mikovskii/tidy-youtube/issues
+// @updateURL    https://raw.githubusercontent.com/mikovskii/tidy-youtube/main/tidy-youtube.user.js
+// @downloadURL  https://raw.githubusercontent.com/mikovskii/tidy-youtube/main/tidy-youtube.user.js
 // ==/UserScript==
 
 /*

@@ -5,7 +5,7 @@ A Tampermonkey userscript that hides clutter in the YouTube interface: Shorts, i
 ## Install
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
 2. In Chromium browsers (Chrome / Arc / Dia), enable **Allow User Scripts** for Tampermonkey (Extensions → Tampermonkey → Details).
-3. Open `tidy-youtube.user.js` (raw) and click **Install**.
+3. Open [tidy-youtube.user.js](https://raw.githubusercontent.com/mikovskii/tidy-youtube/main/tidy-youtube.user.js) and click **Install**. Tampermonkey will keep it updated automatically.
 4. Settings: Tampermonkey icon → **Tidy for YouTube settings**.
 
 ## Options
