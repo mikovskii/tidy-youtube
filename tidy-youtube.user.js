@@ -2,14 +2,14 @@
 // @name         Tidy for YouTube
 // @namespace    tidy-youtube
 // @author       mikovskii
-// @version      1.7.0
+// @version      1.8.0
 // @description  Hides clutter in the YouTube interface: Shorts, shelves, extra buttons. Pure CSS, 34 toggles.
 // @match        https://www.youtube.com/*
 // @run-at       document-start
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
-// @grant        GM_addStyle
+// @grant        GM_addValueChangeListener
 // @noframes
 // @homepageURL  https://github.com/mikovskii/tidy-youtube
 // @supportURL   https://github.com/mikovskii/tidy-youtube/issues
@@ -22,13 +22,14 @@
  * 1. Add an object to the OPTIONS array below:
  *      { key: 'hideFoo', section: 'Video Page', group: 'Actions',
  *        label: "Hide 'Foo'", sel: ['ytd-foo-renderer'] }
- *    - sel  — CSS selectors (each gets the html[data-tidy-hide-foo] prefix automatically);
+ *    - sel  — CSS selectors for the elements to hide;
  *    - mode — 'hide' (default, display:none) or 'gray' (filter:grayscale, use on <img> only).
- * 2. That's it. The default (off), the <html> attribute, the CSS rule and the panel
- *    toggle are all generated. Every option is pure CSS — no JS touches the page DOM.
+ * 2. That's it. The default (off), the CSS rule and the panel toggle are generated.
+ *    Every option is pure CSS — no JS touches the page DOM.
  *
- * All rules live in ONE <style> element, injected once at document-start.
- * Toggling an option only adds/removes an attribute on <html>. No DOM traversal.
+ * One <style> element holds the rules of the ENABLED options only, so disabled options
+ * cost nothing (not even :has() matching). It is rewritten only when a toggle changes.
+ * No observers, no timers, no event listeners on the page.
  */
 
 (() => {
@@ -153,64 +154,57 @@
   ];
 
   const STORE_KEY = 'settings';
-  const root = document.documentElement;
-  const attrOf = (key) => 'data-tidy-' + key.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
   // Everything starts off: users opt in to what they want hidden.
   const DEFAULTS = Object.fromEntries(OPTIONS.map((o) => [o.key, false]));
 
   // ---------------------------------------------------------------------------
-  // Settings: read once at startup, written only when an option changes.
+  // Settings: read once at startup. Writes touch only the changed key and merge
+  // with what is stored, so tabs never overwrite each other's changes.
   // ---------------------------------------------------------------------------
-  const settings = (() => {
-    let saved = {};
-    try { saved = GM_getValue(STORE_KEY, {}) || {}; } catch (_) { /* ignore */ }
-    const s = { ...DEFAULTS };
-    for (const k in DEFAULTS) if (typeof saved[k] === 'boolean') s[k] = saved[k];
-    return s;
-  })();
-  const save = () => GM_setValue(STORE_KEY, { ...settings });
-
-  // ---------------------------------------------------------------------------
-  // CSS: a single style block for the lifetime of the page.
-  // ---------------------------------------------------------------------------
-  const css = OPTIONS.map((o) => {
-    const pre = `html[${attrOf(o.key)}] `;
-    const body = o.mode === 'gray' ? 'filter:grayscale(1)!important' : 'display:none!important';
-    return o.sel.map((s) => pre + s).join(',\n') + `{${body}}`;
-  }).join('\n');
-
-  if (typeof GM_addStyle === 'function') {
-    GM_addStyle(css);
-  } else {
-    const st = document.createElement('style');
-    st.textContent = css;
-    (document.head || root).appendChild(st);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Page type -> data-tidy-page on <html>.
-  // ---------------------------------------------------------------------------
-  const pageType = () => {
-    const p = location.pathname;
-    if (p === '/') return 'home';
-    if (p === '/watch') return 'watch';
-    if (p === '/results') return 'search';
-    if (p.startsWith('/shorts/')) return 'shorts';
-    return 'other';
+  const readStored = () => {
+    try { return GM_getValue(STORE_KEY, {}) || {}; } catch (_) { return {}; }
   };
+  const settings = { ...DEFAULTS };
+  const load = (stored) => {
+    for (const k in DEFAULTS) settings[k] = typeof stored[k] === 'boolean' ? stored[k] : DEFAULTS[k];
+  };
+  load(readStored());
+
+  const saveKey = (key, val) => {
+    const stored = readStored();
+    stored[key] = val;
+    GM_setValue(STORE_KEY, stored);
+  };
+
+  // ---------------------------------------------------------------------------
+  // CSS: one style element with the rules of enabled options only.
+  // ---------------------------------------------------------------------------
+  const style = document.createElement('style');
+  style.id = 'tidy-youtube';
+  const ruleOf = (o) => o.sel.join(',\n') +
+    (o.mode === 'gray' ? '{filter:grayscale(1)!important}' : '{display:none!important}');
+  const applyCss = () => {
+    style.textContent = OPTIONS.filter((o) => settings[o.key]).map(ruleOf).join('\n');
+  };
+  applyCss();
+  (document.head || document.documentElement).appendChild(style);
 
   const setOption = (key, val) => {
     if (settings[key] === val) return;
     settings[key] = val;
-    root.toggleAttribute(attrOf(key), val);
+    applyCss();
   };
 
-  root.setAttribute('data-tidy-page', pageType());
-  for (const o of OPTIONS) root.toggleAttribute(attrOf(o.key), settings[o.key]);
-
-  document.addEventListener('yt-navigate-finish', () => {
-    root.setAttribute('data-tidy-page', pageType());
-  }, { passive: true });
+  // Changes made in another tab apply here immediately.
+  if (typeof GM_addValueChangeListener === 'function') {
+    GM_addValueChangeListener(STORE_KEY, (_name, _old, val, remote) => {
+      if (!remote) return;
+      load(val || {});
+      applyCss();
+      if (panel) panel.refresh();
+      log('synced from another tab');
+    });
+  }
 
   // ---------------------------------------------------------------------------
   // Settings panel: built on open, fully removed on close.
@@ -344,7 +338,7 @@
         onchange: (e) => {
           const v = e.target.checked;
           setOption(o.key, v);
-          save();
+          saveKey(o.key, v);
           for (const i of inputs.get(o.key)) i.checked = v;
           refreshCounts();
           syncLocks();
@@ -505,8 +499,8 @@
     }
     document.addEventListener('keydown', onKey, true);
 
-    (document.body || root).appendChild(host);
-    panel = { host, close };
+    (document.body || document.documentElement).appendChild(host);
+    panel = { host, close, refresh: renderList };
     browseBtn.focus({ preventScroll: true });
   };
 

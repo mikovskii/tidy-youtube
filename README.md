@@ -21,6 +21,7 @@ A Tampermonkey userscript that hides clutter in the YouTube interface: Shorts, i
 | Shorts | Hide Shorts everywhere, or per place while it is off: sidebar entry and channel tab, Home and Subscriptions, Search, Channel and Video pages |
 
 ## How it works
-- Every option is pure CSS: one `<style>` element plus `data-tidy-*` attributes on `<html>`. No MutationObserver, no timers, no DOM traversal.
-- Toggling an option only flips an attribute, so changes apply instantly without a reload.
+- Every option is pure CSS. One `<style>` element holds the rules of the enabled options only, so disabled options cost nothing.
+- The style is rewritten only when you flip a toggle. No MutationObserver, no timers, no event listeners on the page.
+- Settings sync across open tabs instantly, and saving in one tab never overwrites changes made in another.
 - All selectors live in the `OPTIONS` array at the top of the file. The header comment explains how to add a new option.
